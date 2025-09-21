@@ -78,6 +78,15 @@ const showTask = () => {
   });
 };
 
+const showTaskByDate = () => {
+  tasks.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  tasks.forEach((task) => {
+    console.log(
+      `[${task.id}] ${task.name} (${task.status}) created: ${task.timestamp}`
+    );
+  });
+};
+
 const getTaskId = async () => {
   const { id } = await inquirer.prompt({
     type: "input",
@@ -166,6 +175,32 @@ const showTaskByStatus = async () => {
   });
 };
 
+const getSearchKeyword = async () => {
+  const { keyword } = await inquirer.prompt({
+    type: "input",
+    name: "keyword",
+    message: "Enter a keyword to search for:",
+    validate: (input) => input.trim() !== "" || "Please enter a keyword.",
+  });
+  return keyword;
+};
+
+showTaskByKeyword = async () => {
+  const keyword = await getSearchKeyword();
+  const filteredTasks = tasks.filter((task) =>
+    task.name.toLowerCase().includes(keyword.toLowerCase())
+  );
+  if (filteredTasks.length === 0) {
+    console.log(`No tasks found with keyword: ${keyword}`);
+    return;
+  }
+  filteredTasks.forEach((task) => {
+    console.log(
+      `[${task.id}] ${task.name} (${task.status}) created: ${task.timestamp}`
+    );
+  });
+};
+
 const mainPrompt = {
   type: "list",
   name: "action",
@@ -177,6 +212,8 @@ const mainPrompt = {
     "4. Delete a task",
     "5. Edit task title",
     "6. Show tasks by status",
+    "7. Show tasks by date",
+    "8. Search tasks by keyword",
     "0. Exit",
   ],
 };
@@ -207,6 +244,14 @@ const main = async () => {
 
     case "6. Show tasks by status":
       await showTaskByStatus();
+      break;
+
+    case "7. Show tasks by date":
+      showTaskByDate();
+      break;
+
+    case "8. Search tasks by keyword":
+      await showTaskByKeyword();
       break;
 
     case "0. Exit":
