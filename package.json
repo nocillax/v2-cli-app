@@ -1,0 +1,23 @@
+{
+  "name": "v2-cli-app",
+  "version": "1.0.0",
+  "description": "V2-CLI-App",
+  "homepage": "https://github.com/nocillax/v2-cli-app#readme",
+  "bugs": {
+    "url": "https://github.com/nocillax/v2-cli-app/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nocillax/v2-cli-app.git"
+  },
+  "license": "ISC",
+  "author": "nocillax",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "inquirer": "^8.2.7"
+  }
+}
