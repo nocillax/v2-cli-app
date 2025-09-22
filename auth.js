@@ -33,52 +33,76 @@ const loadUsers = () => {
 };
 
 const promptAuth = async () => {
+  // Show welcome screen
+  console.clear();
+  console.log("╔═══════════════════════════════════════╗");
+  console.log("║            📋 TASK MANAGER            ║");
+  console.log("║          Your Personal CLI Todo       ║");
+  console.log("╚═══════════════════════════════════════╝");
+  console.log("\n🔐 Authentication Required\n");
+
   while (true) {
     const { choice } = await inquirer.prompt({
       type: "list",
       name: "choice",
-      message: "Select an option:",
-      choices: ["Login", "Signup", "Exit"],
+      message: "Please choose an option:",
+      choices: [
+        "🔑 Login to existing account",
+        "👤 Create new account",
+        "🚪 Exit application",
+      ],
     });
 
-    if (choice == "Exit") {
+    if (choice === "🚪 Exit application") {
+      console.log("\n👋 Goodbye!");
       process.exit(0);
     }
 
     const users = loadUsers();
 
-    if (choice === "Signup") {
+    if (choice === "👤 Create new account") {
+      console.log("\n📝 Creating new account...");
       const { username, password } = await inquirer.prompt([
-        { type: "input", name: "username", message: "Choose username:" },
-        { type: "password", name: "password", message: "Choose password:" },
+        { type: "input", name: "username", message: "👤 Choose username:" },
+        { type: "password", name: "password", message: "🔒 Choose password:" },
       ]);
+
       if (users.find((u) => u.username === username)) {
-        console.log("Username already exists. Try again.");
+        console.log(
+          "❌ Username already exists. Please try a different name.\n"
+        );
         continue;
       }
+
       const passwordHash = await bcrypt.hash(password, 10);
       users.push({ username, passwordHash });
       saveUsers(users);
-      console.log(`User ${username} created and logged in.`);
+      console.log(`✅ Account created successfully! Welcome, ${username}!`);
       return username;
     }
 
-    if (choice === "Login") {
+    if (choice === "🔑 Login to existing account") {
+      console.log("\n🔐 Please enter your credentials...");
       const { username, password } = await inquirer.prompt([
-        { type: "input", name: "username", message: "Username:" },
-        { type: "password", name: "password", message: "Password:" },
+        { type: "input", name: "username", message: "👤 Username:" },
+        { type: "password", name: "password", message: "🔒 Password:" },
       ]);
+
       const user = users.find((u) => u.username === username);
       if (!user) {
-        console.log("User not found.");
+        console.log(
+          "❌ User not found. Please check your username or create a new account.\n"
+        );
         continue;
       }
+
       const ok = await bcrypt.compare(password, user.passwordHash);
       if (!ok) {
-        console.log("Invalid password.");
+        console.log("❌ Invalid password. Please try again.\n");
         continue;
       }
-      console.log(`Logged in as ${username}.`);
+
+      console.log(`✅ Login successful! Welcome back, ${username}!`);
       return username;
     }
   }
