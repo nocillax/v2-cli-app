@@ -13,6 +13,9 @@ const {
   backupTasks,
   restoreBackup,
   checkBackup,
+  initializeHistory,
+  undoLastAction,
+  redoLastAction,
 } = require("./tasks");
 
 let tasks = [];
@@ -25,7 +28,7 @@ const mainPrompt = {
   choices: [
     "1. Add a new task",
     "2. Show all tasks",
-    "3. Change a task's status",
+    "3. Mark a task Completed",
     "4. Delete a task",
     "5. Edit task title",
     "6. Show tasks by status",
@@ -34,6 +37,8 @@ const mainPrompt = {
     "9. Create backup",
     "10. Restore backup",
     "11. Check backup status",
+    "12. Undo last action",
+    "13. Redo last undone action",
     "0. Exit",
   ],
 };
@@ -50,7 +55,7 @@ const main = async () => {
       showTask(tasks);
       break;
 
-    case "3. Change a task's status":
+    case "3. Mark a task Completed":
       tasks = await doneTask(tasks, currentUser);
       break;
 
@@ -86,6 +91,20 @@ const main = async () => {
       checkBackup(currentUser);
       break;
 
+    case "12. Undo last action":
+      const undoneState = undoLastAction(currentUser);
+      if (undoneState) {
+        tasks = undoneState;
+      }
+      break;
+
+    case "13. Redo last undone action":
+      const redoneState = redoLastAction(currentUser);
+      if (redoneState) {
+        tasks = redoneState;
+      }
+      break;
+
     case "0. Exit":
       process.exit(0);
     default:
@@ -98,5 +117,6 @@ const main = async () => {
 (async () => {
   currentUser = await promptAuth();
   tasks = loadTasksForUser(currentUser);
+  initializeHistory(tasks);
   main();
 })();

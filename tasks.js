@@ -31,6 +31,112 @@ const loadTasksForUser = (username) => {
   }
 };
 
+// Undo/Redo History Management
+const taskHistory = {
+  states: [],
+  currentIndex: -1,
+  maxHistory: 5,
+  lastAction: "",
+};
+
+// Deep clone tasks array to avoid reference issues
+const cloneTasks = (tasks) => {
+  return JSON.parse(JSON.stringify(tasks));
+};
+
+// Save current state before making changes
+const saveState = (beforeTasks, afterTasks, actionDescription) => {
+  // Remove any states after current index (when new action after undo)
+  taskHistory.states = taskHistory.states.slice(
+    0,
+    taskHistory.currentIndex + 1
+  );
+
+  // Add new state with both before and after
+  taskHistory.states.push({
+    beforeTasks: cloneTasks(beforeTasks),
+    afterTasks: cloneTasks(afterTasks),
+    action: actionDescription,
+    timestamp: new Date().toLocaleTimeString(),
+  });
+
+  // Keep only last maxHistory states
+  if (taskHistory.states.length > taskHistory.maxHistory) {
+    taskHistory.states.shift();
+  } else {
+    taskHistory.currentIndex++;
+  }
+
+  // Ensure currentIndex is never greater than states length - 1
+  taskHistory.currentIndex = Math.min(
+    taskHistory.currentIndex,
+    taskHistory.states.length - 1
+  );
+};
+
+// Undo last action
+const undoLastAction = (currentUser) => {
+  if (taskHistory.currentIndex <= 0) {
+    console.log("❌ Nothing to undo.");
+    return null;
+  }
+
+  const currentState = taskHistory.states[taskHistory.currentIndex];
+  taskHistory.currentIndex--;
+
+  // Use beforeTasks to restore the previous state
+  const tasksToRestore = currentState.beforeTasks;
+
+  // Save restored state to file WITHOUT adding to history
+  const fp = getTaskFilePath(currentUser);
+  try {
+    fs.writeFileSync(fp, JSON.stringify(tasksToRestore, null, 2), "utf8");
+  } catch (err) {
+    console.error("Error writing tasks file during undo", err);
+  }
+
+  console.log(`↶ Undone: ${currentState.action}`);
+  return cloneTasks(tasksToRestore);
+};
+
+// Redo last undone action
+const redoLastAction = (currentUser) => {
+  if (taskHistory.currentIndex >= taskHistory.states.length - 1) {
+    console.log("❌ Nothing to redo.");
+    return null;
+  }
+
+  taskHistory.currentIndex++;
+  const stateToRedo = taskHistory.states[taskHistory.currentIndex];
+
+  // Use afterTasks to restore the action result
+  const tasksToRestore = stateToRedo.afterTasks;
+
+  // Save restored state to file WITHOUT adding to history
+  const fp = getTaskFilePath(currentUser);
+  try {
+    fs.writeFileSync(fp, JSON.stringify(tasksToRestore, null, 2), "utf8");
+  } catch (err) {
+    console.error("Error writing tasks file during redo", err);
+  }
+
+  console.log(`↷ Redone: ${stateToRedo.action}`);
+  return cloneTasks(tasksToRestore);
+};
+
+// Initialize history with current tasks (call after loading)
+const initializeHistory = (tasks) => {
+  taskHistory.states = [
+    {
+      beforeTasks: cloneTasks(tasks),
+      afterTasks: cloneTasks(tasks),
+      action: "Initial state",
+      timestamp: new Date().toLocaleTimeString(),
+    },
+  ];
+  taskHistory.currentIndex = 0;
+};
+
 const saveTasks = (tasks, currentUser) => {
   if (!currentUser) {
     console.error("No user selected. Tasks not saved.");
@@ -118,9 +224,16 @@ const addTask = async (tasks, currentUser) => {
     timestamp: timestamp,
   };
 
-  tasks.push(task);
-  saveTasks(tasks, currentUser);
-  return tasks;
+  // Create new tasks array with added task
+  const newTasks = [...tasks, task];
+
+  // Save both before and after states for undo/redo
+  saveState(tasks, newTasks, `Add task "${name}"`);
+
+  // Save the new state to file
+  saveTasks(newTasks, currentUser);
+
+  return newTasks;
 };
 
 const getColoredTasks = (task) => {
@@ -165,43 +278,71 @@ const doneTask = async (tasks, currentUser) => {
     return tasks;
   }
 
-  if (task && task.status !== "Completed") {
-    task.status = "Completed";
-    saveTasks(tasks, currentUser);
+  // Determine what the new status will be
+  const newStatus = task.status === "Completed" ? "Pending" : "Completed";
+
+  // Create new tasks array with updated task
+  const newTasks = tasks.map((t) =>
+    t.id === id ? { ...t, status: newStatus } : t
+  );
+
+  // Save both before and after states for undo/redo
+  saveState(tasks, newTasks, `Mark task "${task.name}" as ${newStatus}`);
+
+  // Save to file
+  saveTasks(newTasks, currentUser);
+
+  if (newStatus === "Completed") {
     console.log(`Task with ID ${id} marked as Completed.`);
-  } else if (task && task.status === "Completed") {
-    console.log(`Task with ID ${id} is already marked as Completed.`);
+  } else {
+    console.log(`Task with ID ${id} marked as Pending.`);
   }
-  return tasks;
+
+  return newTasks;
 };
 
 const deleteTask = async (tasks, currentUser) => {
   const id = await getTaskId();
-  const initialLength = tasks.length;
-  tasks = tasks.filter((t) => t.id !== id);
-  if (tasks.length < initialLength) {
-    saveTasks(tasks, currentUser);
-    console.log(`Task with ID ${id} deleted.`);
-  } else {
+  const taskToDelete = findTaskId(tasks, id);
+
+  if (!taskToDelete) {
     console.log(`Error: Task with ID ${id} not found.`);
+    return tasks;
   }
-  return tasks;
+
+  // Create new tasks array without the deleted task
+  const newTasks = tasks.filter((t) => t.id !== id);
+
+  // Save both before and after states for undo/redo
+  saveState(tasks, newTasks, `Delete task "${taskToDelete.name}"`);
+
+  saveTasks(newTasks, currentUser);
+  console.log(`Task with ID ${id} deleted.`);
+
+  return newTasks;
 };
 
 const editTask = async (tasks, currentUser) => {
   const id = await getTaskId();
-  if (!findTaskId(tasks, id)) {
+  const taskToEdit = findTaskId(tasks, id);
+  if (!taskToEdit) {
     console.log(`Error: Task with ID ${id} not found.`);
     return tasks;
   }
+
+  const oldName = taskToEdit.name;
   const newName = await getNewTaskName();
 
+  // Create new tasks array with updated task
   const updatedTasks = tasks.map((task) => {
     if (task.id === id) {
       return { ...task, name: newName };
     }
     return task;
   });
+
+  // Save both before and after states for undo/redo
+  saveState(tasks, updatedTasks, `Edit task "${oldName}" to "${newName}"`);
 
   saveTasks(updatedTasks, currentUser);
   console.log(`Task with ID ${id} updated.`);
@@ -270,8 +411,15 @@ const restoreBackup = (currentUser) => {
     const data = fs.readFileSync(backupPath, "utf8");
     const backupTasks = JSON.parse(data);
 
+    // Get current tasks before restoring
+    const currentTasks = loadTasksForUser(currentUser);
+
+    // Save both before and after states for undo/redo
+    saveState(currentTasks, backupTasks, "Restore from backup");
+
     // Overwrite current tasks file with backup
-    saveTasks(backupTasks, currentUser);
+    const fp = getTaskFilePath(currentUser);
+    fs.writeFileSync(fp, JSON.stringify(backupTasks, null, 2), "utf8");
 
     console.log(`✅ Tasks restored from backup successfully!`);
     return backupTasks;
@@ -311,4 +459,7 @@ module.exports = {
   backupTasks,
   restoreBackup,
   checkBackup,
+  initializeHistory,
+  undoLastAction,
+  redoLastAction,
 };
