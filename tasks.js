@@ -6,6 +6,12 @@ const ensureDataDir = () => {
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
 };
 
+const ensureBackupDir = () => {
+  ensureDataDir();
+  const backupDir = "./data/backups";
+  if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir);
+};
+
 const getTaskFilePath = (username) => {
   ensureDataDir();
   return `./data/tasks-${username}.json`;
@@ -63,7 +69,7 @@ const getTaskStatus = async () => {
     type: "list",
     name: "status",
     message: "Select task status: ",
-    choices: ["Incomplete", "Pending", "Complete"],
+    choices: ["Pending", "Completed"],
   });
   return status;
 };
@@ -98,7 +104,6 @@ const getSearchKeyword = async () => {
 
 const addTask = async (tasks, currentUser) => {
   const name = await getTaskName();
-  const status = await getTaskStatus();
   const newId = getNextId(tasks);
 
   const now = new Date();
@@ -109,7 +114,7 @@ const addTask = async (tasks, currentUser) => {
   let task = {
     id: newId,
     name: name,
-    status: status,
+    status: "Pending",
     timestamp: timestamp,
   };
 
@@ -118,20 +123,36 @@ const addTask = async (tasks, currentUser) => {
   return tasks;
 };
 
+const getColoredTasks = (task) => {
+  const paddedId = task.id.toString().padStart(3);
+
+  let taskName = task.name;
+  if (taskName.length > 40) {
+    taskName = taskName.substring(0, 37) + "...";
+  }
+  taskName = taskName.padEnd(40);
+
+  const paddedStatus = task.status.padEnd(9);
+
+  const line = `[${paddedId}] ${taskName} (${paddedStatus}) created: ${task.timestamp}`;
+
+  if (task.status === "Completed") {
+    return "\x1b[32m" + line + "\x1b[0m";
+  } else {
+    return "\x1b[31m" + line + "\x1b[0m";
+  }
+};
+
 const showTask = (tasks) => {
   tasks.forEach((task) => {
-    console.log(
-      `[${task.id}] ${task.name} (${task.status}) created: ${task.timestamp}`
-    );
+    console.log(getColoredTasks(task));
   });
 };
 
 const showTaskByDate = (tasks) => {
   tasks.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
   tasks.forEach((task) => {
-    console.log(
-      `[${task.id}] ${task.name} (${task.status}) created: ${task.timestamp}`
-    );
+    console.log(getColoredTasks(task));
   });
 };
 
@@ -144,12 +165,12 @@ const doneTask = async (tasks, currentUser) => {
     return tasks;
   }
 
-  if (task && task.status !== "Complete") {
-    task.status = "Complete";
+  if (task && task.status !== "Completed") {
+    task.status = "Completed";
     saveTasks(tasks, currentUser);
-    console.log(`Task with ID ${id} marked as Complete.`);
-  } else if (task && task.status === "Complete") {
-    console.log(`Task with ID ${id} is already marked as Complete.`);
+    console.log(`Task with ID ${id} marked as Completed.`);
+  } else if (task && task.status === "Completed") {
+    console.log(`Task with ID ${id} is already marked as Completed.`);
   }
   return tasks;
 };
@@ -195,9 +216,7 @@ const showTaskByStatus = async (tasks) => {
     return;
   }
   filteredTasks.forEach((task) => {
-    console.log(
-      `[${task.id}] ${task.name} (${task.status}) created: ${task.timestamp}`
-    );
+    console.log(getColoredTasks(task));
   });
 };
 
@@ -211,10 +230,72 @@ const showTaskByKeyword = async (tasks) => {
     return;
   }
   filteredTasks.forEach((task) => {
-    console.log(
-      `[${task.id}] ${task.name} (${task.status}) created: ${task.timestamp}`
-    );
+    console.log(getColoredTasks(task));
   });
+};
+
+const backupTasks = (tasks, currentUser) => {
+  if (!currentUser) {
+    console.error("No user selected. Backup failed.");
+    return false;
+  }
+
+  ensureBackupDir();
+  const backupPath = `./data/backups/tasks-${currentUser}-backup.json`;
+
+  try {
+    fs.writeFileSync(backupPath, JSON.stringify(tasks, null, 2), "utf8");
+    console.log(`✅ Backup created successfully!`);
+    return true;
+  } catch (err) {
+    console.error("Error creating backup:", err);
+    return false;
+  }
+};
+
+const restoreBackup = (currentUser) => {
+  if (!currentUser) {
+    console.error("No user selected. Restore failed.");
+    return [];
+  }
+
+  const backupPath = `./data/backups/tasks-${currentUser}-backup.json`;
+
+  if (!fs.existsSync(backupPath)) {
+    console.log("❌ No backup found for this user.");
+    return [];
+  }
+
+  try {
+    const data = fs.readFileSync(backupPath, "utf8");
+    const backupTasks = JSON.parse(data);
+
+    // Overwrite current tasks file with backup
+    saveTasks(backupTasks, currentUser);
+
+    console.log(`✅ Tasks restored from backup successfully!`);
+    return backupTasks;
+  } catch (err) {
+    console.error("Error restoring backup:", err);
+    return [];
+  }
+};
+
+const checkBackup = (currentUser) => {
+  if (!currentUser) {
+    console.log("No user selected.");
+    return;
+  }
+
+  const backupPath = `./data/backups/tasks-${currentUser}-backup.json`;
+
+  if (fs.existsSync(backupPath)) {
+    const stats = fs.statSync(backupPath);
+    console.log(`📁 Backup exists for user '${currentUser}'`);
+    console.log(`📅 Last modified: ${stats.mtime.toLocaleString()}`);
+  } else {
+    console.log(`❌ No backup found for user '${currentUser}'`);
+  }
 };
 
 module.exports = {
@@ -227,4 +308,7 @@ module.exports = {
   editTask,
   showTaskByStatus,
   showTaskByKeyword,
+  backupTasks,
+  restoreBackup,
+  checkBackup,
 };

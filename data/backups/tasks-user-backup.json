@@ -2,13 +2,13 @@
   {
     "id": 1,
     "name": "Buy Milk",
-    "status": "Pending",
+    "status": "Incomplete",
     "timestamp": "2025-9-22"
   },
   {
-    "id": 13,
+    "id": 3,
     "name": "Make Bread",
-    "status": "Completed",
+    "status": "Complete",
     "timestamp": "2025-9-22"
   }
 ]

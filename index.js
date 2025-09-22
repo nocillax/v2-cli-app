@@ -10,6 +10,9 @@ const {
   editTask,
   showTaskByStatus,
   showTaskByKeyword,
+  backupTasks,
+  restoreBackup,
+  checkBackup,
 } = require("./tasks");
 
 let tasks = [];
@@ -28,6 +31,9 @@ const mainPrompt = {
     "6. Show tasks by status",
     "7. Show tasks by date",
     "8. Search tasks by keyword",
+    "9. Create backup",
+    "10. Restore backup",
+    "11. Check backup status",
     "0. Exit",
   ],
 };
@@ -66,6 +72,18 @@ const main = async () => {
 
     case "8. Search tasks by keyword":
       await showTaskByKeyword(tasks);
+      break;
+
+    case "9. Create backup":
+      backupTasks(tasks, currentUser);
+      break;
+
+    case "10. Restore backup":
+      tasks = restoreBackup(currentUser);
+      break;
+
+    case "11. Check backup status":
+      checkBackup(currentUser);
       break;
 
     case "0. Exit":
