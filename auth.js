@@ -35,10 +35,10 @@ const loadUsers = () => {
 const promptAuth = async () => {
   // Show welcome screen
   console.clear();
-  console.log("╔═══════════════════════════════════════╗");
-  console.log("║            📋 TASK MANAGER            ║");
-  console.log("║          Your Personal CLI Todo       ║");
-  console.log("╚═══════════════════════════════════════╝");
+  console.log("╔════════════════════════════════════════════════╗");
+  console.log("║                📋 TASK MANAGER                 ║");
+  console.log("║          Your Personal CLI Todo List App       ║");
+  console.log("╚════════════════════════════════════════════════╝");
   console.log("\n🔐 Authentication Required\n");
 
   while (true) {

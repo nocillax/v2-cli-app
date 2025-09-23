@@ -25,10 +25,10 @@ let currentUser = null;
 // Display welcome header
 const showWelcomeHeader = () => {
   console.clear();
-  console.log("╔═══════════════════════════════════════╗");
-  console.log("║            📋 TASK MANAGER            ║");
-  console.log("║          Your Personal CLI Todo       ║");
-  console.log("╚═══════════════════════════════════════╝");
+  console.log("╔════════════════════════════════════════════════╗");
+  console.log("║                📋 TASK MANAGER                 ║");
+  console.log("║          Your Personal CLI Todo List App       ║");
+  console.log("╚════════════════════════════════════════════════╝");
   console.log(`\n👤 Welcome back, ${currentUser}!`);
 
   const taskCount = tasks.length;

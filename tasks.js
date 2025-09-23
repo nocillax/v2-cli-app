@@ -1,41 +1,22 @@
 const inquirer = require("inquirer");
 const fs = require("fs");
 
-/**
- * Ensures the data directory exists for storing task fi// Redoes the last undone action
-const redoLastAction = (currentUser) => {Creates the directory if it doesn't already exist
- */
 const ensureDataDir = () => {
   const dataDirectory = "./data";
   if (!fs.existsSync(dataDirectory)) fs.mkdirSync(dataDirectory);
 };
 
-/**
- * Ensures the backup directory exists for storing backup files
- * Creates both data and backup directories if they don't exist
- */
 const ensureBackupDir = () => {
   ensureDataDir();
   const backupDirectory = "./data/backups";
   if (!fs.existsSync(backupDirectory)) fs.mkdirSync(backupDirectory);
 };
 
-/**
- * Generates the file path for a user's task file
- * @param {string} username - The username for whom to generate the file path
- * @returns {string} The complete file path for the user's tasks
- */
 const getTaskFilePath = (username) => {
   ensureDataDir();
   return `./data/tasks-${username}.json`;
 };
 
-/**
- * Loads all tasks for a specific user from their JSON file
- * Creates an empty task file if none exists for the user
- * @param {string} username - The username whose tasks to load
- * @returns {Array} Array of task objects for the user
- */
 const loadTasksForUser = (username) => {
   const filePath = getTaskFilePath(username);
   try {
@@ -118,12 +99,7 @@ const undoLastAction = (currentUser) => {
   return cloneTasks(tasksToRestore);
 };
 
-/**
- * Redoes the last undone action by restoring the next task state
- * Increments the history index and loads the next state from history
- * @param {string} currentUser - The username whose tasks to restore
- * @returns {Array|null} The restored task array, or null if nothing to redo
- */
+// Redoes the last undone action
 const redoLastAction = (currentUser) => {
   if (taskHistory.currentIndex >= taskHistory.states.length - 1) {
     console.log("❌ Nothing to redo.");
@@ -175,12 +151,6 @@ const saveTasks = (tasks, currentUser) => {
   }
 };
 
-/**
- * Generates the next available ID for a new task
- * Finds the highest existing ID and increments by 1
- * @param {Array} tasks - Current array of tasks
- * @returns {number} The next available task ID
- */
 const getNextId = (tasks) => {
   if (tasks.length === 0) return 1;
   const maxId = tasks.reduce((max, task) => (task.id > max ? task.id : max), 0);
@@ -188,12 +158,6 @@ const getNextId = (tasks) => {
   return nextId;
 };
 
-/**
- * Finds a task by its ID in the tasks array
- * @param {Array} tasks - Array of tasks to search through
- * @param {number} id - The ID of the task to find
- * @returns {Object|undefined} The task object if found, undefined otherwise
- */
 const findTaskId = (tasks, id) => {
   return tasks.find((task) => task.id === id);
 };
@@ -251,12 +215,6 @@ const getTaskDueDate = async () => {
   return parseDueDate(dueDateInput.trim());
 };
 
-/**
- * Parses various date input formats into a standardized date string
- * Handles relative dates like 'today' and 'tomorrow'
- * @param {string} input - The date input string from user
- * @returns {string|null} Formatted date string (YYYY-MM-DD) or null if invalid
- */
 const parseDueDate = (input) => {
   const today = new Date();
 
@@ -282,11 +240,6 @@ const parseDueDate = (input) => {
   return null;
 };
 
-/**
- * Formats a Date object into YYYY-MM-DD string format
- * @param {Date} date - The date object to format
- * @returns {string} Formatted date string
- */
 const formatDate = (date) => {
   return (
     date.getFullYear() +
@@ -297,12 +250,6 @@ const formatDate = (date) => {
   );
 };
 
-/**
- * Formats a timestamp for user-friendly display
- * Shows date and time in a readable format
- * @param {string} timestamp - ISO timestamp string
- * @returns {string} Formatted display string (YYYY-MM-DD HH:MM)
- */
 const formatTimestampForDisplay = (timestamp) => {
   const date = new Date(timestamp);
   const dateStr = formatDate(date);
@@ -335,11 +282,6 @@ const getTaskStatus = async () => {
   return selectedStatus.includes("Pending") ? "Pending" : "Completed";
 };
 
-/**
- * Prompts user to enter a task ID with validation
- * Ensures the ID is a positive number
- * @returns {number} The validated task ID entered by user
- */
 const getTaskId = async () => {
   const { taskId } = await inquirer.prompt({
     type: "input",
@@ -356,13 +298,7 @@ const getTaskId = async () => {
   return parseInt(taskId, 10);
 };
 
-/**
- * Provides interactive task selection with arrow key navigation
- * Shows all tasks with status icons and allows manual ID entry as fallback
- * @param {Array} tasks - Array of tasks to choose from
- * @param {string} actionType - Description of the action being performed
- * @returns {number|null} The selected task ID, or null if no tasks available
- */
+// select a task interactively from a list
 const selectTaskInteractively = async (tasks, actionType) => {
   if (tasks.length === 0) {
     return null;
@@ -382,6 +318,7 @@ const selectTaskInteractively = async (tasks, actionType) => {
       .padStart(3, "0")}] ${truncatedName}${dueDateText}`;
 
     let coloredTaskDisplay;
+
     if (isOverdue) {
       coloredTaskDisplay = "\x1b[91m" + taskDisplay + "\x1b[0m"; // Bright red for overdue
     } else if (task.status === "Completed") {
@@ -420,11 +357,7 @@ const selectTaskInteractively = async (tasks, actionType) => {
   return selectedTaskId;
 };
 
-/**
- * Prompts user to enter a new task name for editing existing tasks
- * Provides validation for empty and overly long names
- * @returns {string} The validated new task name
- */
+// Gets new task name for editing
 const getNewTaskName = async () => {
   const { newTaskName } = await inquirer.prompt({
     type: "input",
@@ -443,11 +376,7 @@ const getNewTaskName = async () => {
   return newTaskName.trim();
 };
 
-/**
- * Prompts user to enter a search keyword for finding tasks
- * Validates that the keyword is not empty
- * @returns {string} The search keyword entered by user
- */
+// Gets search keyword from user
 const getSearchKeyword = async () => {
   const { searchKeyword } = await inquirer.prompt({
     type: "input",
@@ -459,12 +388,7 @@ const getSearchKeyword = async () => {
   return searchKeyword.trim();
 };
 
-/**
- * Creates a formatted display line for a single task
- * Handles overdue highlighting, status icons, and consistent formatting
- * @param {Object} task - The task object to format
- * @returns {string} Formatted and colored task display string
- */
+// Format task with padding
 const formatTaskForDisplay = (task) => {
   const taskId = task.id.toString().padStart(3, "0");
 
@@ -497,12 +421,7 @@ const formatTaskForDisplay = (task) => {
   }
 };
 
-/**
- * Displays a formatted table of tasks with consistent styling
- * Shows task ID, name, status, due date, and creation date
- * @param {Array} tasks - Array of tasks to display
- * @param {string} headerTitle - Optional title for the task list
- */
+// Displays tasks in a formatted table
 const displayTasksTable = (tasks, headerTitle = "Your Tasks") => {
   if (tasks.length === 0) {
     console.log(`\n📭 No tasks found! Add your first task to get started.\n`);
@@ -537,13 +456,7 @@ const displayTasksTable = (tasks, headerTitle = "Your Tasks") => {
   );
 };
 
-/**
- * Creates a new task with user input including optional due date
- * Handles task creation, history saving, and file persistence
- * @param {Array} tasks - Current array of tasks
- * @param {string} currentUser - Username for file saving
- * @returns {Array} Updated array of tasks with the new task added
- */
+//
 const addTask = async (tasks, currentUser) => {
   console.log("\n➕ Adding new task...");
   const taskName = await getTaskName();
@@ -578,20 +491,12 @@ const addTask = async (tasks, currentUser) => {
   return updatedTasks;
 };
 
-/**
- * Displays all tasks using the unified table format
- * Simple wrapper around displayTasksTable for backward compatibility
- * @param {Array} tasks - Array of tasks to display
- */
+// Displays all tasks in a formatted table
 const showTask = (tasks) => {
   displayTasksTable(tasks, "Your Tasks");
 };
 
-/**
- * Displays only overdue tasks with highlighted formatting
- * Filters tasks to show only incomplete tasks past their due date
- * @param {Array} tasks - Array of tasks to filter and display
- */
+// Displays only overdue tasks
 const showOverdueTasks = (tasks) => {
   const overdueTasks = tasks.filter((task) => isTaskOverdue(task));
 
@@ -604,11 +509,7 @@ const showOverdueTasks = (tasks) => {
   console.log("\n⚠️  These tasks need your attention!");
 };
 
-/**
- * Prompts user to choose sort order and displays tasks sorted by date
- * Allows both ascending and descending date sorting
- * @param {Array} tasks - Array of tasks to sort and display
- */
+// Displays tasks sorted by date
 const showTaskByDate = async (tasks) => {
   if (tasks.length === 0) {
     console.log("\n📭 No tasks found!\n");
@@ -643,13 +544,7 @@ const showTaskByDate = async (tasks) => {
   displayTasksTable(sortedTasks, headerTitle);
 };
 
-/**
- * Toggles the completion status of a selected task
- * Allows user to interactively select task and switch between Pending/Completed
- * @param {Array} tasks - Current array of tasks
- * @param {string} currentUser - Username for file saving
- * @returns {Array} Updated array of tasks with status changed
- */
+// Marks a selected task as Completed or Pending
 const doneTask = async (tasks, currentUser) => {
   if (tasks.length === 0) {
     console.log("\n📭 No tasks available to update!");
@@ -697,13 +592,7 @@ const doneTask = async (tasks, currentUser) => {
   return updatedTasks;
 };
 
-/**
- * Deletes a selected task from the task list
- * Provides interactive task selection and confirmation
- * @param {Array} tasks - Current array of tasks
- * @param {string} currentUser - Username for file saving
- * @returns {Array} Updated array of tasks with selected task removed
- */
+// Deletes a task from the list
 const deleteTask = async (tasks, currentUser) => {
   if (tasks.length === 0) {
     console.log("\n📭 No tasks available to delete!");
@@ -712,7 +601,7 @@ const deleteTask = async (tasks, currentUser) => {
 
   console.log("\n🗑️  Delete task...");
 
-  const taskId = await selectTaskInteractively(tasks, "delete");
+  const taskId = selectTaskInteractively(tasks, "delete");
   if (!taskId) return tasks;
 
   const taskToDelete = findTaskId(tasks, taskId);
@@ -784,11 +673,7 @@ const editTask = async (tasks, currentUser) => {
   return updatedTasks;
 };
 
-/**
- * Filters and displays tasks by their completion status
- * Allows user to choose between showing Pending or Completed tasks
- * @param {Array} tasks - Array of tasks to filter and display
- */
+// Displays tasks filtered by their status
 const showTaskByStatus = async (tasks) => {
   if (tasks.length === 0) {
     console.log("\n📭 No tasks available to filter!");
@@ -812,11 +697,7 @@ const showTaskByStatus = async (tasks) => {
   displayTasksTable(filteredTasks, headerTitle);
 };
 
-/**
- * Searches for tasks containing a specific keyword in their names
- * Provides case-insensitive search functionality
- * @param {Array} tasks - Array of tasks to search through
- */
+// Displays tasks matching a search keyword
 const showTaskByKeyword = async (tasks) => {
   if (tasks.length === 0) {
     console.log("\n📭 No tasks available to search!");
@@ -838,13 +719,7 @@ const showTaskByKeyword = async (tasks) => {
   displayTasksTable(matchingTasks, headerTitle);
 };
 
-/**
- * Creates a backup of current tasks to the backup directory
- * Provides detailed feedback about backup creation and location
- * @param {Array} tasks - Array of tasks to backup
- * @param {string} currentUser - Username for backup file naming
- * @returns {boolean} True if backup successful, false otherwise
- */
+// Creates a backup of the current tasks to a separate file
 const backupTasks = (tasks, currentUser) => {
   if (!currentUser) {
     console.error("❌ No user selected. Backup failed.");
@@ -867,12 +742,7 @@ const backupTasks = (tasks, currentUser) => {
   }
 };
 
-/**
- * Restores tasks from a backup file, replacing current tasks
- * Creates history entry for undo functionality and provides user feedback
- * @param {string} currentUser - Username to restore backup for
- * @returns {Array} The restored tasks array, or empty array if failed
- */
+// Restores tasks from the backup file
 const restoreBackup = (currentUser) => {
   if (!currentUser) {
     console.error("❌ No user selected. Restore failed.");
@@ -913,11 +783,7 @@ const restoreBackup = (currentUser) => {
   }
 };
 
-/**
- * Checks if a backup exists for the current user and shows backup info
- * Displays backup file existence, location, and last modified date
- * @param {string} currentUser - Username to check backup for
- */
+// Checks if a backup exists and displays its details
 const checkBackup = (currentUser) => {
   if (!currentUser) {
     console.log("❌ No user selected.");
