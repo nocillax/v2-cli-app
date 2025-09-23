@@ -47,9 +47,20 @@ A powerful command-line task management application built with Node.js. Manage y
 
 ### 👥 Multi-User Support
 
-- **User Authentication** - Secure login system
+- **User Authentication** - Secure login system with input validation
 - **Separate Task Lists** - Each user has their own tasks
-- **Account Creation** - Easy signup process
+- **Account Creation** - Easy signup process with username/password requirements
+
+### ✅ Smart Input Validation
+
+- **Real-time validation** - See requirements while you type
+- **Username requirements** - 3-20 characters, letters/numbers only
+- **Password security** - Minimum 4 characters for account protection
+- **Task name validation** - 1-100 characters, prevents empty inputs
+- **Task ID validation** - Only accepts positive whole numbers
+- **Search validation** - 2-50 characters for meaningful searches
+- **Date format validation** - Ensures proper YYYY-MM-DD format or keywords
+- **Clear error messages** - Specific guidance when validation fails
 
 ## 🚀 Installation
 
@@ -87,8 +98,41 @@ node index.js
 
 1. Run `node index.js`
 2. Choose "Create new account" 👤
-3. Enter your username and password
-4. You're ready to manage tasks!
+3. Enter your username (3-20 characters, letters/numbers only)
+4. Create a password (minimum 4 characters)
+5. You're ready to manage tasks!
+
+### Input Requirements & Validation
+
+The app includes smart validation to help you enter data correctly:
+
+#### 🔐 Account Creation
+
+```
+👤 Choose username (3-20 chars, letters/numbers only): john123
+🔒 Choose password (minimum 4 characters): ********
+```
+
+#### 📝 Task Management
+
+```
+✏️ Task name (1-100 characters, no empty spaces only): Buy groceries
+🔢 Enter task ID (positive number only, e.g., 1, 2, 3...): 5
+```
+
+#### 🔍 Search & Dates
+
+```
+🔍 Search keyword (2-50 characters, no empty spaces only): grocery
+📅 Enter due date (YYYY-MM-DD format, or 'today'/'tomorrow'): 2025-12-25
+```
+
+**Validation Features:**
+
+- ✅ Real-time feedback as you type
+- ❌ Clear error messages explaining what went wrong
+- 💡 Format examples shown in prompts
+- 🔄 Re-prompt until valid input is entered
 
 ### Main Menu Navigation
 
@@ -148,6 +192,13 @@ When changing status, deleting, or editing:
 📅 Enter due date: 2025-12-25
 📅 Enter due date: 2025-01-01
 ```
+
+**Validation prevents common errors:**
+
+- ❌ Invalid formats like `25-12-2025` or `Dec 25`
+- ❌ Impossible dates like `2025-13-45`
+- ❌ Empty or spaces-only input
+- ✅ Accepts `today`, `tomorrow`, or proper `YYYY-MM-DD` format
 
 ## 📊 Example Usage
 
@@ -231,10 +282,32 @@ v2-cli-app/
 
 ### Getting Help
 
-1. Check this README first
-2. Verify all dependencies are installed
-3. Make sure you're using Node.js v14+
-4. Try creating a fresh user account
+1. **Check validation messages** - The app provides real-time feedback on input requirements
+2. **Read error messages carefully** - They explain exactly what format is expected
+3. **Check this README** for examples and usage patterns
+4. **Verify all dependencies are installed** with `npm install`
+5. **Make sure you're using Node.js v14+**
+6. **Try creating a fresh user account** if login issues persist
+
+### Common Validation Examples
+
+**✅ Valid inputs:**
+
+- Username: `john123`, `user1`, `myname`
+- Password: `pass123`, `mypassword`
+- Task name: `Buy groceries`, `Call mom`, `Finish report`
+- Task ID: `1`, `25`, `100`
+- Search: `grocery`, `work`, `call`
+- Date: `today`, `tomorrow`, `2025-12-31`
+
+**❌ Invalid inputs:**
+
+- Username: `jo` (too short), `user-name` (special chars), `` (empty)
+- Password: `abc` (too short), `` (empty)
+- Task name: ``(empty),` ` (spaces only)
+- Task ID: `0`, `-5`, `abc`, `1.5`
+- Search: `a` (too short), `` (empty)
+- Date: `25-12-2025`, `Dec 25`, `2025/12/25`
 
 ## 📄 License
 

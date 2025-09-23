@@ -63,8 +63,43 @@ const promptAuth = async () => {
     if (choice === "👤 Create new account") {
       console.log("\n📝 Creating new account...");
       const { username, password } = await inquirer.prompt([
-        { type: "input", name: "username", message: "👤 Choose username:" },
-        { type: "password", name: "password", message: "🔒 Choose password:" },
+        {
+          type: "input",
+          name: "username",
+          message: "👤 Choose username (3-20 chars, letters/numbers only):",
+          validate: (input) => {
+            if (!input.trim()) {
+              return "❌ Username cannot be empty!";
+            }
+            if (input.length < 3) {
+              return "❌ Username must be at least 3 characters long!";
+            }
+            if (input.length > 20) {
+              return "❌ Username cannot exceed 20 characters!";
+            }
+            if (!/^[a-zA-Z0-9]+$/.test(input)) {
+              return "❌ Username can only contain letters and numbers!";
+            }
+            return true;
+          },
+        },
+        {
+          type: "password",
+          name: "password",
+          message: "🔒 Choose password (minimum 4 characters):",
+          validate: (input) => {
+            if (!input) {
+              return "❌ Password cannot be empty!";
+            }
+            if (input.length < 4) {
+              return "❌ Password must be at least 4 characters long!";
+            }
+            if (input.length > 50) {
+              return "❌ Password cannot exceed 50 characters!";
+            }
+            return true;
+          },
+        },
       ]);
 
       if (users.find((u) => u.username === username)) {
@@ -84,8 +119,28 @@ const promptAuth = async () => {
     if (choice === "🔑 Login to existing account") {
       console.log("\n🔐 Please enter your credentials...");
       const { username, password } = await inquirer.prompt([
-        { type: "input", name: "username", message: "👤 Username:" },
-        { type: "password", name: "password", message: "🔒 Password:" },
+        {
+          type: "input",
+          name: "username",
+          message: "👤 Username:",
+          validate: (input) => {
+            if (!input.trim()) {
+              return "❌ Please enter your username!";
+            }
+            return true;
+          },
+        },
+        {
+          type: "password",
+          name: "password",
+          message: "🔒 Password:",
+          validate: (input) => {
+            if (!input) {
+              return "❌ Please enter your password!";
+            }
+            return true;
+          },
+        },
       ]);
 
       const user = users.find((u) => u.username === username);

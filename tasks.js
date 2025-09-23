@@ -167,13 +167,16 @@ const getTaskName = async () => {
   const { taskName } = await inquirer.prompt({
     type: "input",
     name: "taskName",
-    message: "✏️  Task name:",
+    message: "✏️  Task name (1-100 characters, no empty spaces only):",
     validate: (input) => {
-      if (input.trim() === "") {
-        return "❌ Task name cannot be empty!";
+      if (!input.trim()) {
+        return "❌ Task name cannot be empty or contain only spaces!";
+      }
+      if (input.trim().length < 1) {
+        return "❌ Task name must have at least 1 character!";
       }
       if (input.length > 100) {
-        return "❌ Task name too long! Maximum 100 characters.";
+        return "❌ Task name too long! Maximum 100 characters allowed.";
       }
       return true;
     },
@@ -197,15 +200,31 @@ const getTaskDueDate = async () => {
   const { dueDateInput } = await inquirer.prompt({
     type: "input",
     name: "dueDateInput",
-    message: "📅 Enter due date (YYYY-MM-DD or 'today', 'tomorrow'):",
+    message: "📅 Enter due date (YYYY-MM-DD format, or 'today'/'tomorrow'):",
     validate: (input) => {
       if (!input.trim()) {
         return "❌ Please enter a date or press Ctrl+C to cancel!";
       }
 
-      const parsedDate = parseDueDate(input.trim());
+      const trimmedInput = input.trim();
+
+      // Check for valid keywords first
+      if (
+        trimmedInput.toLowerCase() === "today" ||
+        trimmedInput.toLowerCase() === "tomorrow"
+      ) {
+        return true;
+      }
+
+      // Check YYYY-MM-DD format
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(trimmedInput)) {
+        return "❌ Invalid format! Use YYYY-MM-DD (e.g., 2025-12-31), 'today', or 'tomorrow'";
+      }
+
+      const parsedDate = parseDueDate(trimmedInput);
       if (!parsedDate) {
-        return "❌ Invalid date format! Use YYYY-MM-DD, 'today', or 'tomorrow'";
+        return "❌ Invalid date! Please check day/month values (e.g., 2025-09-23)";
       }
 
       return true;
@@ -286,16 +305,25 @@ const getTaskId = async () => {
   const { taskId } = await inquirer.prompt({
     type: "input",
     name: "taskId",
-    message: "🔢 Enter task ID:",
+    message: "🔢 Enter task ID (positive number only, e.g., 1, 2, 3...):",
     validate: (input) => {
-      const parsedNumber = parseInt(input, 10);
-      if (isNaN(parsedNumber) || parsedNumber <= 0) {
-        return "❌ Please enter a valid task ID (positive number)!";
+      if (!input.trim()) {
+        return "❌ Please enter a task ID!";
+      }
+      const parsedNumber = parseInt(input.trim(), 10);
+      if (isNaN(parsedNumber)) {
+        return "❌ Task ID must be a number! (e.g., 1, 2, 3...)";
+      }
+      if (parsedNumber <= 0) {
+        return "❌ Task ID must be a positive number greater than 0!";
+      }
+      if (!Number.isInteger(parsedNumber)) {
+        return "❌ Task ID must be a whole number!";
       }
       return true;
     },
   });
-  return parseInt(taskId, 10);
+  return parseInt(taskId.trim(), 10);
 };
 
 // select a task interactively from a list
@@ -362,13 +390,16 @@ const getNewTaskName = async () => {
   const { newTaskName } = await inquirer.prompt({
     type: "input",
     name: "newTaskName",
-    message: "✏️  New task name:",
+    message: "✏️  New task name (1-100 characters, no empty spaces only):",
     validate: (input) => {
-      if (input.trim() === "") {
-        return "❌ Task name cannot be empty!";
+      if (!input.trim()) {
+        return "❌ Task name cannot be empty or contain only spaces!";
+      }
+      if (input.trim().length < 1) {
+        return "❌ Task name must have at least 1 character!";
       }
       if (input.length > 100) {
-        return "❌ Task name too long! Maximum 100 characters.";
+        return "❌ Task name too long! Maximum 100 characters allowed.";
       }
       return true;
     },
@@ -381,9 +412,19 @@ const getSearchKeyword = async () => {
   const { searchKeyword } = await inquirer.prompt({
     type: "input",
     name: "searchKeyword",
-    message: "🔍 Search keyword:",
-    validate: (input) =>
-      input.trim() !== "" || "❌ Please enter a search keyword.",
+    message: "🔍 Search keyword (2-50 characters, no empty spaces only):",
+    validate: (input) => {
+      if (!input.trim()) {
+        return "❌ Please enter a search keyword! Cannot be empty or spaces only.";
+      }
+      if (input.trim().length < 2) {
+        return "❌ Search keyword must be at least 2 characters long!";
+      }
+      if (input.length > 50) {
+        return "❌ Search keyword too long! Maximum 50 characters allowed.";
+      }
+      return true;
+    },
   });
   return searchKeyword.trim();
 };
